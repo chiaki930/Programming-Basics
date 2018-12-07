@@ -37,46 +37,46 @@ void display()
     ///// 2Dパート開始
     glDisable(GL_LIGHTING);  // 消してはいけない
 
-    // 画面を横切る線
-    //
-    // 引数に線の太さを指定（浮動小数）
-    glLineWidth(10.0);
-    // 線の色：引数は先頭から[Red, Green, Blue] を指定
-    glColor3d(1.0, 1.0, 1.0);
-    // 線の描画
-    glBegin(GL_LINES);        // 線描はじめ
-    glVertex3d(-100.0, 0, 0); // 始端 [x, y, z]
-    glVertex3d(100.0, 0, 0);  // 終端 [x, y, z]
-    glEnd();                  // 線描おわり
 
     /////
     ///// 3Dパート開始
     glEnable(GL_LIGHTING);    // 消してはいけない
 
-    // マウスカーソルについてくるティーポット
-    glPushMatrix();
-    //
-    // ティーポットの位置指定 [x, y, z]
-    glTranslated(mousePosX, mousePosY, 0);
-    // ティーポットの回転 [回転角度(degree), 回転軸x, 回転軸y, 回転軸z]
-    glRotated(time * 60.0, 0, 0, 1.0);
-    // ティーポットの色
-    float teapot1Color[4] = { 1.0, 0.2, 0.2, 1.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot1Color);
-    // ティーポットの描画。引数には大きさを指定
-    glutSolidTeapot(20.0);
-    //
-    glPopMatrix();
-
-    // 画面を横方向に往復している半透明ドーナッツ
-    glPushMatrix();
-    double px = 80.0 * sin(time * 2.0);
-    glTranslated(px, 0, 0);
-    glRotated(time * 100.0, 0, 1.0, 0);
-    float teapot2Color[4] = { 0.2, 0.2, 1.0, 0.5 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot2Color);
-    glutSolidTorus(5.0, 20.0, 50, 50); // 引数には輪の太さと環の大きさ、あとは適当に50を2つ
-    glPopMatrix();
+	// 25個のティーポットを格子状に並べて表示する
+	//
+	// それぞれの位置と角度設定
+	double xpos[5][5];  // X座標
+	double ypos[5][5];  // y座標
+	double angle[5][5]; // 回転角度
+	for (int x = 0; x < 5; ++x)
+	{
+		for (int y = 0; y < 5; ++y)
+		{
+			xpos[x][y]  = x * 40 - 80.0; // 5個中3個目（x == 2）が原点になるように
+			ypos[x][y]  = y * 40 - 80.0; // 5個中3個目（y == 2）が原点になるように
+			angle[x][y] = time * 60.0;
+		}
+	}
+	// 描画
+	for (int x = 0; x < 5; ++x)
+	{
+		for (int y = 0; y < 5; ++y)
+		{
+			glPushMatrix();
+			//
+			// 位置 [x, y, z]
+			glTranslated(xpos[x][y], ypos[x][y], 0);
+			// 回転 [角度(degree), 回転軸x, 回転軸y, 回転軸z]
+			glRotated(angle[x][y], 0, 0, 1.0);
+			// 色
+			float teapot1Color[4] = { 1.0, 0.2, 0.2, 1.0 };
+			glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot1Color);
+			// 描画
+			glutSolidTeapot(10.0);
+			//
+			glPopMatrix();
+		}
+	}
 
     /***** ここまで編集する *****/
     postdisplay(); // 描画終了時に必ず呼ぶ関数。消してはならない
@@ -100,7 +100,6 @@ void predisplay()
 void postdisplay()
 {
     glutSwapBuffers();
-    key = 0;
 }
 
 void keyboard(unsigned char k, int x, int y)
