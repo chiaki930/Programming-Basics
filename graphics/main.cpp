@@ -53,30 +53,32 @@ void display()
     ///// 3Dパート開始
     glEnable(GL_LIGHTING);    // 消してはいけない
 
-    // マウスカーソルについてくるティーポット
-    glPushMatrix();
-    //
-    // ティーポットの位置指定 [x, y, z]
-    glTranslated(mousePosX, mousePosY, 0);
-    // ティーポットの回転 [回転角度(degree), 回転軸x, 回転軸y, 回転軸z]
-    glRotated(time * 60.0, 0, 0, 1.0);
-    // ティーポットの色
-    float teapot1Color[4] = { 1.0, 0.2, 0.2, 1.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot1Color);
-    // ティーポットの描画。引数には大きさを指定
-    glutSolidTeapot(20.0);
-    //
-    glPopMatrix();
-
-    // 画面を横方向に往復している半透明ドーナッツ
-    glPushMatrix();
-    double px = 80.0 * sin(time * 2.0);
-    glTranslated(px, 0, 0);
-    glRotated(time * 100.0, 0, 1.0, 0);
-    float teapot2Color[4] = { 0.2, 0.2, 1.0, 0.5 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot2Color);
-    glutSolidTorus(5.0, 20.0, 50, 50); // 引数には輪の太さと環の大きさ、あとは適当に50を2つ
-    glPopMatrix();
+	// 10個のティーポットの位置指定
+	//
+	double xpos[10]; // x座標
+	double ypos[10]; // Y座標
+	for (int i = 0; i < 10; ++i)
+	{
+		xpos[i] = i * 20.0 - 90.0; // 距離20ずつ離し、x==5,6を原点付近に移動させる
+		ypos[i] = i * 10.0 - 45.0;
+	}
+	// 10個のティーポットの描画
+	for (int i = 0; i < 10; ++i)
+	{
+		glPushMatrix();
+		//
+		// 位置 [x, y, z]
+		glTranslated(xpos[i], ypos[i], 0);
+		// 回転 [角度(degree), 回転軸x, 回転軸y, 回転軸z]
+		glRotated(time * 60.0, 0, 0, 1.0);
+		// 色
+		float teapot1Color[4] = { 1.0, 0.2, 0.2, 1.0 };
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot1Color);
+		// 描画
+		glutSolidTeapot(10.0);
+		//
+		glPopMatrix();
+	}
 
     /***** ここまで編集する *****/
     postdisplay(); // 描画終了時に必ず呼ぶ関数。消してはならない
