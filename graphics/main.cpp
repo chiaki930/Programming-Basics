@@ -18,7 +18,38 @@ unsigned char key = 0; // キーボードからの入力値
 void predisplay();     // 描画開始時に必ず呼ぶ関数
 void postdisplay();    // 描画終了時に必ず呼ぶ関数
 
+// 25個のティーポットの位置と角度
+double xpos[5][5];  // X座標
+double ypos[5][5];  // y座標
+double angle[5][5]; // 回転角度
+
 ////////////////////////////////////////////////////////////////////////////////
+
+void setup()
+{
+    float gray[4] = { 0.5, 0.5, 0.5, 1.0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, gray);
+    float black[4] = { 0.1, 0.1, 0.1, 1.0 };
+    glLightfv(GL_LIGHT0, GL_AMBIENT, black);
+
+    // ライトの位置 [x, y, z, 1]
+    float lightPos[4] = { 0, 80.0, 100.0, 1.0 };
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+    // ライトの色 [Red, Green, Blue, 1]
+    float lightColor[4] = { 1.0, 1.0, 1.0, 1.0 };
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
+
+    // 25個のティーポットをランダムに配置する
+    for (int x = 0; x < 5; ++x)
+    {
+        for (int y = 0; y < 5; ++y)
+        {
+            xpos[x][y] = (double(rand()) / RAND_MAX * 2.0 - 1.0) * 100.0;
+            ypos[x][y] = (double(rand()) / RAND_MAX * 2.0 - 1.0) * 100.0;
+        }
+    }
+}
 
 void display()
 {
@@ -37,27 +68,20 @@ void display()
     ///// 2Dパート開始
     glDisable(GL_LIGHTING);  // 消してはいけない
 
-
     /////
     ///// 3Dパート開始
     glEnable(GL_LIGHTING);    // 消してはいけない
 
-	// 25個のティーポットを格子状に並べて表示する
-	//
-	// それぞれの位置と角度設定
-	double xpos[5][5];  // X座標
-	double ypos[5][5];  // y座標
-	double angle[5][5]; // 回転角度
-	for (int x = 0; x < 5; ++x)
-	{
-		for (int y = 0; y < 5; ++y)
-		{
-			xpos[x][y]  = x * 40 - 80.0; // 5個中3個目（x == 2）が原点になるように
-			ypos[x][y]  = y * 40 - 80.0; // 5個中3個目（y == 2）が原点になるように
-			angle[x][y] = time * 60.0;
-		}
-	}
-	// 描画
+    // 25個のティーポットを同じ角度で回転させる
+    for (int x = 0; x < 5; ++x)
+    {
+        for (int y = 0; y < 5; ++y)
+        {
+            angle[x][y] = time * 60.0;
+        }
+    }
+    
+    // 描画
 	for (int x = 0; x < 5; ++x)
 	{
 		for (int y = 0; y < 5; ++y)
@@ -168,18 +192,6 @@ int main(int argc, char* argv[])
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_LIGHT0);
-    float gray[4]  = { 0.5, 0.5, 0.5, 1.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, gray);
-    float black[4] = { 0.1, 0.1, 0.1, 1.0 };
-    glLightfv(GL_LIGHT0, GL_AMBIENT, black);
-
-    // ライトの位置 [x, y, z, 1]
-    float lightPos[4] = { 0, 80.0, 100.0, 1.0 };
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-    // ライトの色 [Red, Green, Blue, 1]
-    float lightColor[4] = { 1.0, 1.0, 1.0, 1.0 };
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,  lightColor);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
 
 #ifdef WIN32
     LARGE_INTEGER freq, t;
@@ -192,6 +204,7 @@ int main(int argc, char* argv[])
     startTime = ts.tv_sec + ts.tv_nsec / 1.0e9;
 #endif
     prevTime = getTime();
+    setup();
     glutMainLoop();
     return 0;
 }
