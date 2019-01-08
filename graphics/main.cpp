@@ -40,43 +40,43 @@ void display()
     // 画面を横切る線
     //
     // 引数に線の太さを指定（浮動小数）
-    glLineWidth(10.0);
+    glLineWidth(2.0);
     // 線の色：引数は先頭から[Red, Green, Blue] を指定
     glColor3d(1.0, 1.0, 1.0);
-    // 線の描画
-    glBegin(GL_LINES);        // 線描はじめ
-    glVertex3d(-100.0, 0, 0); // 始端 [x, y, z]
-    glVertex3d(100.0, 0, 0);  // 終端 [x, y, z]
-    glEnd();                  // 線描おわり
+    for (int i = -5; i <= 5; ++i)
+    {
+        glBegin(GL_LINES);
+        glVertex3d(-i * 20.0, -100.0, 0);
+        glVertex3d(-i * 20.0,  100.0, 0);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex3d(-100.0, -i * 20.0, 0);
+        glVertex3d( 100.0, -i * 20.0, 0);
+        glEnd();
+    }
+
+    for (int x = -100; x < 100; x += 20)
+    {
+        for (int y = -100; y < 100; y += 20)
+        {
+            if (mousePosX >= x && mousePosX < x + 20.0
+                && mousePosY >= y && mousePosY < y + 20.0)
+            {
+                glColor3d(1.0, 0, 0); // red
+                glBegin(GL_POLYGON); // 多角形の塗りつぶし描画
+                glVertex3d(x, y, 0);
+                glVertex3d(x, y + 20.0, 0);
+                glVertex3d(x + 20.0, y + 20.0, 0);
+                glVertex3d(x + 20.0, y, 0);
+                glEnd();
+            }
+        }
+    }
 
     /////
     ///// 3Dパート開始
     glEnable(GL_LIGHTING);    // 消してはいけない
-
-    // マウスカーソルについてくるティーポット
-    glPushMatrix();
-    //
-    // ティーポットの位置指定 [x, y, z]
-    glTranslated(mousePosX, mousePosY, 0);
-    // ティーポットの回転 [回転角度(degree), 回転軸x, 回転軸y, 回転軸z]
-    glRotated(time * 60.0, 0, 0, 1.0);
-    // ティーポットの色
-    float teapot1Color[4] = { 1.0, 0.2, 0.2, 1.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot1Color);
-    // ティーポットの描画。引数には大きさを指定
-    glutSolidTeapot(20.0);
-    //
-    glPopMatrix();
-
-    // 画面を横方向に往復している半透明ドーナッツ
-    glPushMatrix();
-    double px = 80.0 * sin(time * 2.0);
-    glTranslated(px, 0, 0);
-    glRotated(time * 100.0, 0, 1.0, 0);
-    float teapot2Color[4] = { 0.2, 0.2, 1.0, 0.5 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot2Color);
-    glutSolidTorus(5.0, 20.0, 50, 50); // 引数には輪の太さと環の大きさ、あとは適当に50を2つ
-    glPopMatrix();
 
     /***** ここまで編集する *****/
     postdisplay(); // 描画終了時に必ず呼ぶ関数。消してはならない
