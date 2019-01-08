@@ -18,7 +18,32 @@ unsigned char key = 0; // キーボードからの入力値
 void predisplay();     // 描画開始時に必ず呼ぶ関数
 void postdisplay();    // 描画終了時に必ず呼ぶ関数
 
+                       // テクスチャマッピングのための追加
+bool loadTexture(int textureId, const char* filename, int width, int height);
+GLuint textureID;
+
 ////////////////////////////////////////////////////////////////////////////////
+
+void setup()
+{
+    float gray[4] = { 0.5, 0.5, 0.5, 1.0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, gray);
+    float black[4] = { 0.1, 0.1, 0.1, 1.0 };
+    glLightfv(GL_LIGHT0, GL_AMBIENT, black);
+
+    // ライトの位置 [x, y, z, 1]
+    float lightPos[4] = { 0, 80.0, 100.0, 1.0 };
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+    // ライトの色 [Red, Green, Blue, 1]
+    float lightColor[4] = { 1.0, 1.0, 1.0, 1.0 };
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
+
+    // 今回使う画像は1枚のみ
+    glGenTextures(1, &textureID);
+    // earth.raw という画像ファイルを読み込む（RAWファイルのみ使用可能）
+    loadTexture(textureID, "earth.raw", 2048, 1025);
+}
 
 void display()
 {
@@ -37,45 +62,32 @@ void display()
     ///// 2Dパート開始
     glDisable(GL_LIGHTING);  // 消してはいけない
 
-    // 画面を横切る線
-    //
-    // 引数に線の太さを指定（浮動小数）
-    glLineWidth(10.0);
-    // 線の色：引数は先頭から[Red, Green, Blue] を指定
-    glColor3d(1.0, 1.0, 1.0);
-    // 線の描画
-    glBegin(GL_LINES);        // 線描はじめ
-    glVertex3d(-100.0, 0, 0); // 始端 [x, y, z]
-    glVertex3d(100.0, 0, 0);  // 終端 [x, y, z]
-    glEnd();                  // 線描おわり
-
     /////
     ///// 3Dパート開始
     glEnable(GL_LIGHTING);    // 消してはいけない
 
-    // マウスカーソルについてくるティーポット
+    // マウスカーソルについてくる四角形（画像貼付）
     glPushMatrix();
     //
-    // ティーポットの位置指定 [x, y, z]
+    // 位置指定 [x, y, z]
     glTranslated(mousePosX, mousePosY, 0);
-    // ティーポットの回転 [回転角度(degree), 回転軸x, 回転軸y, 回転軸z]
-    glRotated(time * 60.0, 0, 0, 1.0);
-    // ティーポットの色
-    float teapot1Color[4] = { 1.0, 0.2, 0.2, 1.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot1Color);
-    // ティーポットの描画。引数には大きさを指定
-    glutSolidTeapot(20.0);
+    // 画像を貼り付けるためのおまじない
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glEnable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+    // 四角形（画像で塗りつぶし）
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0, 0);  glVertex3d(-40, -40, 0); // 画像の左下[0, 0]と四角形の左下[-40, -40]を対応付け
+    glTexCoord2f(0, 1);  glVertex3d(-40,  40, 0); // 画像の左上[0, 1]と四角形の左上[-40,  40]を対応付け
+    glTexCoord2f(1, 1);  glVertex3d( 40,  40, 0); // 画像の右上[1, 1]と四角形の右上[-40,  40]を対応付け
+    glTexCoord2f(1, 0);  glVertex3d( 40, -40, 0); // 画像の右下[1, 0]と四角形の右下[ 40, -40]を対応付け
+    glEnd();
+    // 画像貼付おわりのおまじない
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
     //
-    glPopMatrix();
-
-    // 画面を横方向に往復している半透明ドーナッツ
-    glPushMatrix();
-    double px = 80.0 * sin(time * 2.0);
-    glTranslated(px, 0, 0);
-    glRotated(time * 100.0, 0, 1.0, 0);
-    float teapot2Color[4] = { 0.2, 0.2, 1.0, 0.5 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot2Color);
-    glutSolidTorus(5.0, 20.0, 50, 50); // 引数には輪の太さと環の大きさ、あとは適当に50を2つ
     glPopMatrix();
 
     /***** ここまで編集する *****/
@@ -152,6 +164,47 @@ void mouseMotion(int x, int y)
     glutIdleFunc(idle);
 }
 
+bool loadTexture(int textureId, const char* filename, int width, int height)
+{
+    // テクスチャマップをファイルから読み込み
+    FILE* ftex = nullptr;
+    fopen_s(&ftex, filename, "rb");
+    if (ftex == nullptr) // ファイルロード失敗
+    {
+        return false;
+    }
+    GLubyte* textureImage = new GLubyte[width * height * 4];
+    for (int h = 0; h < height; ++h)
+    {
+        for (int w = 0; w < width; ++w)
+        {
+            // R, G, B & アルファ成分をファイルから読み出し
+            for (int i = 0; i < 4; ++i)
+            {
+                fread(&textureImage[((height - h - 1) * width + w) * 4 + i], sizeof(unsigned char), 1, ftex);
+            }
+        }
+    }
+    fclose(ftex);
+
+    // テクスチャオブジェクトの作成
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    // テクスチャの割り当て 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureImage);
+    // テクスチャマップのデータ格納形式の指定
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    // テクスチャの繰り返し方法の指定 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    // テクスチャを拡大・縮小する方法の指定 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // 色の調整（環境の設定）
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    delete[] textureImage;
+}
+
 int main(int argc, char* argv[])
 {
     glutInit(&argc, argv);
@@ -168,18 +221,8 @@ int main(int argc, char* argv[])
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_LIGHT0);
-    float gray[4]  = { 0.5, 0.5, 0.5, 1.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, gray);
-    float black[4] = { 0.1, 0.1, 0.1, 1.0 };
-    glLightfv(GL_LIGHT0, GL_AMBIENT, black);
 
-    // ライトの位置 [x, y, z, 1]
-    float lightPos[4] = { 0, 80.0, 100.0, 1.0 };
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-    // ライトの色 [Red, Green, Blue, 1]
-    float lightColor[4] = { 1.0, 1.0, 1.0, 1.0 };
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,  lightColor);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
+    setup();
 
 #ifdef WIN32
     LARGE_INTEGER freq, t;
