@@ -18,7 +18,39 @@ unsigned char key = 0; // キーボードからの入力値
 void predisplay();     // 描画開始時に必ず呼ぶ関数
 void postdisplay();    // 描画終了時に必ず呼ぶ関数
 
+// 10個のティーポットの情報
+double xpos[10];    // x座標
+double ypos[10];    // Y座標
+float color[10][4]; // 色
+
 ////////////////////////////////////////////////////////////////////////////////
+
+void setup()
+{
+    float gray[4] = { 0.5, 0.5, 0.5, 1.0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, gray);
+    float black[4] = { 0.1, 0.1, 0.1, 1.0 };
+    glLightfv(GL_LIGHT0, GL_AMBIENT, black);
+
+    // ライトの位置 [x, y, z, 1]
+    float lightPos[4] = { 0, 80.0, 100.0, 1.0 };
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+    // ライトの色 [Red, Green, Blue, 1]
+    float lightColor[4] = { 1.0, 1.0, 1.0, 1.0 };
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
+
+    // 10個のティーポットの位置と色指定
+    for (int i = 0; i < 10; ++i)
+    {
+        xpos[i] = i * 10.0;
+        ypos[i] = i * 10.0;
+        color[i][0] = 1.0; //R
+        color[i][1] = 0.2; //G
+        color[i][2] = 0.2; //B
+        color[i][3] = 1.0; //A = 1
+    }
+}
 
 void display()
 {
@@ -37,32 +69,47 @@ void display()
     ///// 2Dパート開始
     glDisable(GL_LIGHTING);  // 消してはいけない
 
-    // 画面を横切る線
-    //
-    // 引数に線の太さを指定（浮動小数）
-    glLineWidth(10.0);
-    // 線の色：引数は先頭から[Red, Green, Blue] を指定
-    glColor3d(1.0, 1.0, 1.0);
-    // 線の描画
-    glBegin(GL_LINES);        // 線描はじめ
-    glVertex3d(-100.0, 0, 0); // 始端 [x, y, z]
-    glVertex3d(100.0, 0, 0);  // 終端 [x, y, z]
-    glEnd();                  // 線描おわり
-
     /////
     ///// 3Dパート開始
     glEnable(GL_LIGHTING);    // 消してはいけない
 
-	// 10個のティーポットの位置指定
-	//
-	double xpos[10]; // x座標
-	double ypos[10]; // Y座標
-	for (int i = 0; i < 10; ++i)
-	{
-		xpos[i] = i * 20.0 - 90.0; // 距離20ずつ離し、x==5,6を原点付近に移動させる
-		ypos[i] = i * 10.0 - 45.0;
-	}
-	// 10個のティーポットの描画
+    // 円周上を動かす
+    for (int i = 0; i < 10; ++i)
+    {
+        xpos[i] = 50.0 * sin(2.0 * time + i * 0.5) + mousePosX;
+        ypos[i] = 50.0 * cos(2.0 * time + i * 0.5) + mousePosY;
+    }
+
+    // キーボードに応じて色を変える
+    if (key == 'r' || key == 'R')
+    {
+        for (int i = 0; i < 10; ++i)
+        {
+            color[i][0] = 1.0; // R
+            color[i][1] = 0.0; // G
+            color[i][2] = 0.0; // B
+        }
+    }
+    else if (key == 'g' || key == 'G')
+    {
+        for (int i = 0; i < 10; ++i)
+        {
+            color[i][0] = 0.0; // R
+            color[i][1] = 1.0; // G
+            color[i][2] = 0.0; // B
+        }
+    }
+    else if (key == 'b' || key == 'B')
+    {
+        for (int i = 0; i < 10; ++i)
+        {
+            color[i][0] = 0.0; // R
+            color[i][1] = 0.0; // G
+            color[i][2] = 1.0; // B
+        }
+    }
+
+    // 10個のティーポットの描画
 	for (int i = 0; i < 10; ++i)
 	{
 		glPushMatrix();
@@ -72,9 +119,9 @@ void display()
 		// 回転 [角度(degree), 回転軸x, 回転軸y, 回転軸z]
 		glRotated(time * 60.0, 0, 0, 1.0);
 		// 色
-		float teapot1Color[4] = { 1.0, 0.2, 0.2, 1.0 };
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, teapot1Color);
-		// 描画
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color[i]);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, color[i]);
+        // 描画
 		glutSolidTeapot(10.0);
 		//
 		glPopMatrix();
@@ -170,18 +217,8 @@ int main(int argc, char* argv[])
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_LIGHT0);
-    float gray[4]  = { 0.5, 0.5, 0.5, 1.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, gray);
-    float black[4] = { 0.1, 0.1, 0.1, 1.0 };
-    glLightfv(GL_LIGHT0, GL_AMBIENT, black);
 
-    // ライトの位置 [x, y, z, 1]
-    float lightPos[4] = { 0, 80.0, 100.0, 1.0 };
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-    // ライトの色 [Red, Green, Blue, 1]
-    float lightColor[4] = { 1.0, 1.0, 1.0, 1.0 };
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,  lightColor);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
+    setup();
 
 #ifdef WIN32
     LARGE_INTEGER freq, t;
